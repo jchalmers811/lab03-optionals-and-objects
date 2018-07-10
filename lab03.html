@@ -1,0 +1,1746 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>COSC346 Week 3 - SimpleOptionals and Complex Objects</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+   	<link rel="stylesheet" type="text/css" href="http://cs.otago.ac.nz/cosc346/labs/phplabbook/labbookswift.css">
+	<link rel="stylesheet" type="text/css" href="http://cs.otago.ac.nz/cosc346/labs/cosc346labstyle.css">
+
+
+	<script src="http://cs.otago.ac.nz/cosc346/labs/jquery-1.11.1.min.js"></script>
+	<script src="http://cs.otago.ac.nz/cosc346/labs/toc.min.js"></script>
+	<script src="http://cs.otago.ac.nz/cosc346/labs/cosc346labscript.js"></script>
+</head>
+<body>
+
+	<!-- Banner -->
+	<div class="banner">
+		<a href="http://cs.otago.ac.nz/cosc346/labs.php">COSC346&mdash;Object Oriented Programming and User Interfaces</a>
+	</div>
+		
+	<!-- Lab title -->		
+	<h1>Week 3&mdash;SimpleOptionals and Complex Objects</h1>
+	
+	<!-- Table of Contents -->
+	<div id="toc"></div>
+		
+		
+	<h2>Goals</h2>
+	<div class="block">
+		<ul class="toplist">
+			<li>To study <em>optionals</em> by implementing an objected oriented version of the concept</li>
+			<li>To implement a class to a defined interface</li>
+			<li>To learn about the difference between a reference copy and an object (or value) copy</li>
+		</ul>
+	</div>
+		
+		
+	<h2>Preparation</h2>
+	<div class="block">
+	<ul class="toplist">
+		<li>Complete <a href="../lab02/lab02.html">Lab 2</a>&mdash;you'll be using the <em>Fraction</em> class in this lab
+		<li>From Apple's "The Swift Programming Language" read:
+		<ul>
+			<li><a href="https://docs.swift.org/swift-book/LanguageGuide/TheBasics.html#ID330">Optionals</a>
+			</li>
+		</ul>
+		</li>
+	</ul>
+	</div>
+
+	<h2>Optionals</h2>
+	<div class="block">
+		
+		<p>
+		The first part of this lab is designed to get you acquainted with the concept of an <a href="https://docs.swift.org/swift-book/LanguageGuide/TheBasics.html#ID330">optional</a>, which is an important (and extremely useful) feature of the Swift language.  At the same time you're going to get a bit more practice with object oriented programming by creating a class which emulates what <em>optionals</em> do.  
+		</p>
+
+		<h3>SimpleOptional</h3>		
+
+		<p>		
+		The <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> class we're going to create is supposed to (more or less) do what an <em>optional</em> does.  Just keep in mind that <em>optionals</em> are an integrated feature of the Swift language, and so they are not actually classes.  But this implementation of an <em>optional</em>-like class should give you a good idea of what <em>optionals</em> are all about.
+		</p>
+		
+		<p>
+		The functionality that the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> class is going to provide is a generic and uniform mechanism of encoding the "no-value" state for variables and object references.  The "no-value" state is very handy for error propagation.  For instance, recall that in the previous lab, instantiation of a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> object with denominator value of 0 would trigger an assert.  This would stop the program execution.  This might be fine for a lab exercise, but in big and complex program such errors must be handled gracefully.  It would not be acceptable for Excel, for instance, to crash every time you entered a letter value into an cell that is formatted as a number, because the equation that depends on that cell cannot handle invalid input.  The program must identify such errors and continuing its operation to informing the user about the problem.  And so, the proper way to handle bad initialisation of a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> would be not to instantiate an object with invalid state and give the programmer means of detecting the failure.  This is where <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> can be of use. 
+		</p>
+		
+		<p>
+		Create a new <em>OS X / Application / Command Line Tool</em> project in Xcode and name it <em>prog3.1</em>.  Create a new swift file and name it <em>SimpleOptional.swift</em>.  Here's what should go into the new file:
+		</p>
+		
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/01/SimpleOptional.swift">SimpleOptional.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;">001:
+002:
+003:
+004:
+005:
+006:
+007:
+008:
+009:
+010:
+011:
+012:
+013:
+014:
+015:
+016:
+017:
+018:
+019:
+020:
+021:
+022:
+023:
+024:
+025:
+026:
+027:
+028:
+029:
+030:
+031:
+032:
+033:
+034:
+035:
+036:
+037:
+038:
+039:
+040:
+041:
+042:
+043:
+044:
+045:
+046:
+047:
+048:
+049:
+050:
+051:
+052:
+053:
+054:
+055:
+056:
+057:
+058:
+059:
+060:
+061:
+062:
+063:
+064:
+065:
+066:
+067:
+068:
+069:
+070:
+071:
+072:
+073:
+074:
+075:
+076:
+077:
+078:
+079:
+080:
+081:
+082:
+083:
+084:
+085:
+086:
+087:
+088:
+089:
+090:
+091:
+092:
+093:
+094:
+095:
+096:
+097:
+098:
+099:
+100:
+101:
+</pre><pre class="code">
+<span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment"> Wrapper for value (or an object) with a boolean flag</span></span>
+<span class="swiftcode"><span class="swiftcomment"> that indicates whether the value is defined or not</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> */</span></span>
+<span class="swiftcode"><span class="swiftkeyword">class</span> <span class="swiftdefined">SimpleOptional</span> : <span class="swiftclass">CustomStringConvertible</span> {</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// STORED PROPERTIES</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftkeyword">let</span> value: <span class="swiftclass">Any</span>          <span class="swiftcomment">//Reference to wrapped value</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">let</span> hasValue: <span class="swiftclass">Bool</span>      <span class="swiftcomment">//Flag indicating whether value has been</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//set or not</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// COMPUTED PROPERTIES</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">     - returns: Any Reference to the unwrapped value</span></span>
+<span class="swiftcode"><span class="swiftcomment">     */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">var</span> unwrap: <span class="swiftclass">Any</span> {</span>
+<span class="swiftcode">        </span>
+<span class="swiftcode">        <span class="swiftcomment">// Cannot unwrap if there is no value</span></span>
+<span class="swiftcode">        assert(<span class="swiftkeyword">self</span>.hasValue, <span class="swiftstring">"fatal error: cannot unwrap a NIL"</span>)</span>
+<span class="swiftcode">        </span>
+<span class="swiftcode">        <span class="swiftkeyword">return</span> <span class="swiftkeyword">self</span>.value</span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">     - returns: String String representation of the wrapped value if not nil,</span></span>
+<span class="swiftcode"><span class="swiftcomment">     "nil" otherwise.</span></span>
+<span class="swiftcode"><span class="swiftcomment">     */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">var</span> description: <span class="swiftclass">String</span> {</span>
+<span class="swiftcode">        <span class="swiftkeyword">if</span> <span class="swiftkeyword">self</span>.hasValue {</span>
+<span class="swiftcode">            <span class="swiftkeyword">return</span> <span class="swiftstring">"SimpleOptional(</span></span><span class="codeswift">\<span class="swiftstring">(</span><span class="swiftkeyword">self</span>.value<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">)"</span></span>
+<span class="swiftcode">        } <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">            <span class="swiftkeyword">return</span> <span class="swiftstring">"nil"</span></span>
+<span class="swiftcode">        }</span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// INITIALISERS</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">     Initialiser for undefined value</span></span>
+<span class="swiftcode"><span class="swiftcomment">     */</span></span>
+<span class="swiftcode">    fileprivate <span class="swiftkeyword">init</span>() {</span>
+<span class="swiftcode">        <span class="swiftkeyword">self</span>.value = <span class="swiftstring">"Undefined"</span></span>
+<span class="swiftcode">        <span class="swiftkeyword">self</span>.hasValue = <span class="swiftkeyword">false</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">     Initialiser that wraps a defined value</span></span>
+<span class="swiftcode"><span class="swiftcomment">     </span></span>
+<span class="swiftcode"><span class="swiftcomment">     - parameter value: Value (or object) to wrap</span></span>
+<span class="swiftcode"><span class="swiftcomment">     */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">init</span>(value: <span class="swiftclass">Any</span>) {</span>
+<span class="swiftcode">        <span class="swiftkeyword">self</span>.value = value</span>
+<span class="swiftcode">        <span class="swiftkeyword">self</span>.hasValue = <span class="swiftkeyword">true</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment"> Equality comparison operator between two SimpleOptionals</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> Two optionals are considered the same if they both</span></span>
+<span class="swiftcode"><span class="swiftcomment"> wrap a value, or are both nil.  The wrapped values</span></span>
+<span class="swiftcode"><span class="swiftcomment"> are not compared.  This is useful for checking whether</span></span>
+<span class="swiftcode"><span class="swiftcomment"> a SimpleOptional has a value or not</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> - parameter left: The operand to the left of ==</span></span>
+<span class="swiftcode"><span class="swiftcomment"> - parameter right: The operand to the right of ==</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> - returns: Bool True if both optionals has a value or</span></span>
+<span class="swiftcode"><span class="swiftcomment"> both have no value, false otherwise</span></span>
+<span class="swiftcode"><span class="swiftcomment"> */</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> == (left: <span class="swiftdefined">SimpleOptional</span>, right: <span class="swiftdefined">SimpleOptional</span>) -&gt; <span class="swiftclass">Bool</span> {</span>
+<span class="swiftcode">    <span class="swiftkeyword">if</span> right.hasValue == left.hasValue {</span>
+<span class="swiftcode">        <span class="swiftkeyword">return</span> <span class="swiftkeyword">true</span></span>
+<span class="swiftcode">    } <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">        <span class="swiftkeyword">return</span> <span class="swiftkeyword">false</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment"> Non-equality comparison operator between two SimpleOptionals</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> This operator inverts the logic of the == operator</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> - parameter left: The operand to the left of !=</span></span>
+<span class="swiftcode"><span class="swiftcomment"> - parameter right: The operand to the right of !=</span></span>
+<span class="swiftcode"><span class="swiftcomment"> </span></span>
+<span class="swiftcode"><span class="swiftcomment"> - returns: Bool True if one of the optionals has a value and</span></span>
+<span class="swiftcode"><span class="swiftcomment"> the other doesn't, false otherwise</span></span>
+<span class="swiftcode"><span class="swiftcomment"> */</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> != (left: <span class="swiftdefined">SimpleOptional</span>, right: <span class="swiftdefined">SimpleOptional</span>) -&gt; <span class="swiftclass">Bool</span> {</span>
+<span class="swiftcode">    <span class="swiftkeyword">return</span> !(left == right)</span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">// Define NIL as a SimpleOptional that has no value</span></span>
+<span class="swiftcode"><span class="swiftkeyword">let</span> NIL: <span class="swiftdefined">SimpleOptional</span> = <span class="swiftdefined">SimpleOptional</span>()</span>
+</pre>
+</div>
+		
+
+		<p>
+		Read the comments carefully and try to understand how the class works.  The <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is basically a wrapper for a value (or a reference to an object) of any type.  Its state consists of two properties: a value and a boolean flag indicating whether that value is set.  The properties are immutable, meaning the class state can only be set once, through an initialiser, when the object is created.  There are two initialisers.  The one without arguments creates a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> object with no value and the <span class="codeline">hasValue</span> property set to <em><span class="swiftcode"><span class="swiftkeyword">false</span></span></em>.   The other initialiser accepts an argument of <em><span class="swiftcode"><span class="swiftclass">Any</span></span></em> type and sets the <span class="codeline">hasValue</span> flag to true.  That argument correspond to the value that <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is wrapping.  The <em><span class="swiftcode"><span class="swiftclass">Any</span></span></em> type is a special type in Swift that matches any other type.  This means that the  <span class="codeline">value</span> parameter of the initialiser call can be set to a value or reference of any type.  Note that the first initialiser, the one without arguments, is <em><span class="swiftcode">fileprivate</span></em>&mdash;this means it can be only used from within the <em>SimpleOptions.swift</em> file.    (Note that Swift 3 introduced <em><span class="swiftcode">fileprivate</span></em>, and made <em><span class="swiftcode"><span class="swiftkeyword">private</span></span></em> more restrictive. Prior to Swift 3, <em><span class="swiftcode"><span class="swiftkeyword">private</span></span></em> would have been used here.)
+		</p>
+		
+		<p>
+		The class has two computed properties.  The unwrap property returns the <span class="codeline">value</span> property, unless the <span class="codeline">hasValue</span> flag is not set, in which case an assert will be triggered.  The second computer property, <span class="codeline">description</span>, returns a string representation of the value when <span class="codeline">hasValue</span> is <em><span class="swiftcode"><span class="swiftkeyword">true</span></span></em>, and a "nil" string otherwise.
+		</p>
+
+		<p>
+		The class block is followed by two functions that define the equality (==) and non-equality (!=) operators between two <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> objects.  Two <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> objects are deemed equal if they both hold a value, or if they both do not hold a value&mdash;the actual values are not examined during the comparison.  Note that the function definining the non-equality operator invokes the equality operator, then simply inverts its return value.
+		</p>
+		
+		<p>
+		Finally, at the bottom, an instance object of the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is created using the (file)private initialiser.  This will set the object's internal <span class="codeline">hasValue</span> flag to false.  This instance is assigned to a constant reference called <em><span class="swiftcode">NIL</span></em>.  Note, that since <em><span class="swiftcode"><span class="swiftkeyword">init</span>()</span></em> is a fileprivate method, there can be no instantiation of a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> object with that initialiser outside this file.  <em><span class="swiftcode">NIL</span></em> will be <strong>the only</strong> instance of <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> that has no value.
+		</p>
+		
+		<p>
+		If you're typing all this out, do not forget the colon and <em><span class="swiftcode"><span class="swiftclass">CustomStringConvertible</span></span></em> keyword that follows the class definition&mdash;its purpose will be explained in the next section.
+		</p>
+		
+		<h3>NIL</h3>
+
+		<p>		
+		Write the following program in <em>main.swift</em>:
+		</p>		
+				
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/01/main.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;">01:
+02:
+03:
+04:
+05:
+06:
+07:
+08:
+09:
+10:
+11:
+12:
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+</pre><pre class="code">
+<span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare variable x as a SimpleOptional</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">SimpleOptional</span>;</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Assign NIL optional to x</span></span>
+<span class="swiftcode">x = NIL</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Print x</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> x == NIL {</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span>
+<span class="swiftcode">} <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//and print it</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">}</span>
+</pre>
+</div>
+		
+	
+		<p>	
+		When you run this program, you should get the following output:
+		</p>
+
+<pre class="output">
+x=nil
+x has no value
+</pre>
+		<p>
+		Let's go over the program step by step.  First, a variable <span class="codeline">x</span> of a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> type is declared.  Then, it's assigned a <em><span class="swiftcode">NIL</span></em> value.  This means, that <span class="codeline">x</span> holds no value.  In the following print statement, the state of the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is shown using its <span class="codeline">description</span> property.  The if statement that follows is a check for whether the optional holds a value or not.  If it did, that value would be unwrapped and printed, but in this case, the first branch is taken, because <span class="codeline">x</span> is NIL.     
+		</p>
+
+		<div class="note">
+		<img src="images/note.png" style="width:64px;max:64px">
+	
+		<p>
+		If you paid close attention, you might have noticed that the <em><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></em> statement did what <em><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x.description<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></em> would do.  How did Swift know to use that method?  The reason, as you might suspect, is that Swift syntax introduces a shortcut.  For objects that implement a <em><span class="swiftcode"><span class="swiftclass">String</span></span></em> returning <em><span class="swiftcode">description</span></em> property, the two statements are equivalent.  It makes it much easier for the programmer not to have to type out "description" every time.  There is one more condition that the class must satisfy in order for this to work&mdash;it must conform to the <em><span class="swiftcode"><span class="swiftclass">CustomStringConvertible</span></span></em> protocol.  In other words, the class must <em>promise</em> that it will implement the  <span class="codeline">description</span> method with the expected signature.  Note that in <em>SimpleOptional.swift</em> the class definition is followed by a colon and the <em><span class="swiftcode"><span class="swiftclass">CustomStringConvertible</span></span></em> keyword.  This is where the <em>promise</em> is made so that the compiler is happy.  Protocols will be discussed in detail when we come to polymorphism.  However, we had to introduce the <em><span class="swiftcode"><span class="swiftclass">CustomStringConvertible</span></span></em> keyword early on, because not having to type out <span class="codeline">description</em> every time we interpolate, speeds up development a lot.
+		</p>
+
+		</div>
+
+		<h3>A value</h3>
+
+		<p>
+		Assign a value to <em>x</em> in <em>main.swift</em>, and follow with checks of <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em>'s state like so:
+		</p>
+
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/01/main.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;"><span class="codeold">01:
+</span><span class="codeold">02:
+</span><span class="codeold">03:
+</span><span class="codeold">04:
+</span><span class="codeold">05:
+</span><span class="codeold">06:
+</span><span class="codeold">07:
+</span><span class="codeold">08:
+</span><span class="codeold">09:
+</span><span class="codeold">10:
+</span><span class="codeold">11:
+</span><span class="codeold">12:
+</span><span class="codeold">13:
+</span><span class="codeold">14:
+</span><span class="codeold">15:
+</span><span class="codeold">16:
+</span><span class="codeold">17:
+</span><span class="codeold">18:
+</span><span class="codeold">19:
+</span><span class="codeold">20:
+</span>21:
+22:
+23:
+24:
+25:
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+33:
+34:
+</pre><pre class="code">
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare variable x as a SimpleOptional</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">SimpleOptional</span>;</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Assign NIL optional to x</span></span></span>
+<span class="codeold"><span class="swiftcode">x = NIL</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Print x</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">if</span> x == NIL {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">} <span class="swiftkeyword">else</span> {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//and print it</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">}</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="swiftcode"><span class="swiftcomment">//Assign a value of 3 to x</span></span>
+<span class="swiftcode">x = <span class="swiftdefined">SimpleOptional</span>(value: <span class="swiftnumber">3</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Print x</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> x != NIL {</span>
+<span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//and print it</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">} <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span>
+<span class="swiftcode">}</span>
+</pre>
+</div>
+		
+
+		<p>
+		When you run this program, you should get the following additional output:
+		</p>
+		
+<pre class="output">
+x=SimpleOptional(3)
+x has a value of 3
+</pre>
+
+		<p>
+		OK, so what's happening now?  Instantiating a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> object with a different initialiser creates an object that wraps the passed-in value&mdash;the <span class="codeline">hasValue</span> property of the new object is set to true.  When <span class="codeline">x</span> is printed, the wrapped value is shown within the "SimpleOptional()" string, to signify that the printed object is a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> wrapping the value shown.  This time the check for <em><span class="swiftcode">NIL</span></em> is done using the not-equal operator (just to show that it works as well).  Since <span class="codeline">x</span> has a value and <em><span class="swiftcode">NIL</span></em> does not, they are considered not equal, and so the first branch of the if block is taken, where the value is unwrapped from the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> object in the <em><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></em> statement.
+		</p>
+
+
+		<div class="note">
+		<img src="images/note.png" style="width:64px;max:64px">
+	
+		<p>
+		What would happen if the <span class="codeline">NIL</span> <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> was unwrapped?  If you examine the implementation of the  <span class="codeline">unwrap</span> property, you'll see that an assert will be triggered.  Given that programmer has the ability to check whether a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is <em><span class="swiftcode">NIL</span></em> or not, there should be clear separation of program logic for a the case when a variable has a value and the case when it doesn't.   The <em>optional</em> that does not have a value should never be unwrapped. 
+		</p>
+		</div>
+
+		<h3>Enter the Fraction</h3>
+
+		<p>
+		Next, you'll wrap <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> around another object.  Copy the <em>Fraction.swift</em> file from the previous lab into the <em>prog3.1</em> folder where <em>main.swift</em> and <em>SimpleOptional.swift</em> files are found.  In Xcode, in the project navigator window, select the <em>prog3.1</em> folder under the <em>prog3.1</em> target.  Then, from the main menu select <em>File -> Add files to prog3.1...</em> and select <em>Fraction.swift</em> from where its just been copied.  Make sure that the option "Create folder references" is selected, and press "Add".  <em>Fraction.swift</em> should now appear in your project navigator, and from now on it will be compiled with the rest of your program.  Hence, you can create objects of the  <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> class in <em>main.swift</em>.  Before you do that though, modify the <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> class to indicate that it conforms to the <em><span class="swiftcode"><span class="swiftclass">CustomStringConvertible</span></span></em> protocol&mdash;just change the declaration line "<em><span class="swiftcode"><span class="swiftkeyword">class</span> <span class="swiftdefined">Fraction</span> {</span></em>" to "<em><span class="swiftcode"><span class="swiftkeyword">class</span> <span class="swiftdefined">Fraction</span> : <span class="swiftclass">CustomStringConvertible</span> {</span></em>".  Nothing else needs to be done, because the <span class="codeline">description</span> methods has been already implemented.  From now on, you can do string interpolation of <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>s without explicit calls to the <span class="codeline">description</span> method.
+		</p>
+		
+		<p>
+		Add the following code to <em>main.swift</em>:
+		</p>
+
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/01/main.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;"><span class="codeold">01:
+</span><span class="codeold">02:
+</span><span class="codeold">03:
+</span><span class="codeold">04:
+</span><span class="codeold">05:
+</span><span class="codeold">06:
+</span><span class="codeold">07:
+</span><span class="codeold">08:
+</span><span class="codeold">09:
+</span><span class="codeold">10:
+</span><span class="codeold">11:
+</span><span class="codeold">12:
+</span><span class="codeold">13:
+</span><span class="codeold">14:
+</span><span class="codeold">15:
+</span><span class="codeold">16:
+</span><span class="codeold">17:
+</span><span class="codeold">18:
+</span><span class="codeold">19:
+</span><span class="codeold">20:
+</span><span class="codeold">21:
+</span><span class="codeold">22:
+</span><span class="codeold">23:
+</span><span class="codeold">24:
+</span><span class="codeold">25:
+</span><span class="codeold">26:
+</span><span class="codeold">27:
+</span><span class="codeold">28:
+</span><span class="codeold">29:
+</span><span class="codeold">30:
+</span><span class="codeold">31:
+</span><span class="codeold">32:
+</span><span class="codeold">33:
+</span><span class="codeold">34:
+</span><span class="codeold">35:
+</span>36:
+37:
+38:
+39:
+40:
+41:
+42:
+43:
+44:
+45:
+46:
+47:
+48:
+49:
+50:
+51:
+52:
+53:
+54:
+55:
+56:
+57:
+58:
+59:
+60:
+</pre><pre class="code">
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare variable x as a SimpleOptional</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">SimpleOptional</span>;</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Assign NIL optional to x</span></span></span>
+<span class="codeold"><span class="swiftcode">x = NIL</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Print x</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">if</span> x == NIL {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">} <span class="swiftkeyword">else</span> {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//and print it</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">}</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Assign a value of 3 to x</span></span></span>
+<span class="codeold"><span class="swiftcode">x = <span class="swiftdefined">SimpleOptional</span>(value: <span class="swiftnumber">3</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Print x</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">if</span> x != NIL {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//and print it</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">} <span class="swiftkeyword">else</span> {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">}</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare vriable z as a SimpleOptional</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> z: <span class="swiftdefined">SimpleOptional</span></span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Assign a Fraction object 1/3 to z</span></span>
+<span class="swiftcode">z = <span class="swiftdefined">SimpleOptional</span>(value: <span class="swiftdefined">Fraction</span>(num: <span class="swiftnumber">1</span>, den: <span class="swiftnumber">3</span>))</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Print z</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"z=</span></span><span class="codeswift">\<span class="swiftstring">(</span>z<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Check if z has a value or not</span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> z != NIL {</span>
+<span class="swiftcode">    <span class="swiftcomment">//If z has a value, unwrap that value</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//and print it</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"z has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>z.unwrap<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">    <span class="swiftcomment">//If the value of an optional is an object,</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//the optional must be unwrapped in order</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//to access the properties and methods of that object</span></span>
+<span class="swiftcode"></span>
+<span class="swiftcode">    <span class="swiftcomment">//Unwrap z and force type cast it to a Fraction object</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">let</span> v = z.unwrap <span class="swiftkeyword">as</span>! <span class="swiftdefined">Fraction</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//Print the computed decimal property</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"The decimal property of z's value is </span></span><span class="codeswift">\<span class="swiftstring">(</span>v.decimal<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">} <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"z has no value"</span>)</span>
+<span class="swiftcode">}</span>
+</pre>
+</div>
+		
+		
+		<p>
+		The program creates a new <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> with a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> object as its value.  Run the program and your should get the following additional output:
+		</p>
+
+<pre class="output">
+z=SimpleOptional(1/3)
+z has a value of 1/3
+The decimal property of z's value is 0.333333
+</pre>
+
+		<p>
+		Once again, the initialisation of the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is followed with an if block that checks whether the variable holds a value or not.  The case where <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> is found not to be <span class="codeline">NIL</span> prints the string representation of the unwrapped object, which in this case is the string representation of the <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> .  The next two lines demonstrate that  <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>  methods can be only invoked on the unwrapped value.  This is because <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> does not implement the <span class="codeline">decimal</span> method&mdash;it's the <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> class that does.
+		</p>
+		
+		<p>
+		Since the <span class="codeline">unwrap</span> method of <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> returns a value of <em><span class="swiftcode"><span class="swiftclass">Any</span></span></em> type, you need to force a type cast to a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> type in order for the compiler to allow invocation of its <span class="codeline">decimal</span> method.  Type casting in Swift can be done with the <em><span class="swiftcode"><span class="swiftkeyword">as</span></span></em> keyword.  Given that, in general, the compiler has no reason to suppose that <em><span class="swiftcode"><span class="swiftclass">Any</span></span></em> type could be be treated as a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> type, it will not allow the typecast.  However, given that <strong>you know</strong> that the value you just wrapped is a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>, you can insist and force the typecast using the <em><span class="swiftcode"><span class="swiftkeyword">as</span>!</span></em> syntax.  And so, the line "<em><span class="swiftcode"><span class="swiftkeyword">let</span> v = z.unwrap <span class="swiftkeyword">as</span>! <span class="swiftdefined">Fraction</span></span></em>" can be read as: "Take the result of unwrapping z, force typecast it to a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>, and assign it to a constant v".  Because of the forced type cast, <span class="codeline">v</span> becomes a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>.
+		</p>
+
+		<p>
+		That's all there is to the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> class.  It can carry a value of any type or be assigned NIL.  It can be tested, and if it not NIL, the stored value can be unwrapped for whatever use.  Next, you'll see how the same functionality is provided by the built-in <em>optionals</em>.
+		</p>
+
+	  <h3>Proper optionals</h3>
+
+		<p>
+		In this part of the exercise, you're going to rewrite <em>main.swift</em> from <em>prog3.1</em> to do the same thing it did before, but using <em>optionals</em> instead of <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em>.  In Xcode, create a new Command Line Tool project and call it <em>prog3.2</em>.  Add <em>Fraction.swift</em> to it and write the following program in <em>main.swift</em>: 
+		</p>
+
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/02/main_01.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;">01:
+02:
+03:
+04:
+05:
+06:
+07:
+08:
+09:
+10:
+11:
+12:
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:
+25:
+26:
+27:
+28:
+29:
+30:
+31:
+32:
+33:
+34:
+35:
+36:
+37:
+38:
+39:
+40:
+41:
+42:
+43:
+44:
+45:
+46:
+47:
+48:
+49:
+50:
+51:
+52:
+53:
+54:
+55:
+56:
+57:
+58:
+59:
+</pre><pre class="code">
+<span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare variable x as an optional Int</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftclass">Int</span>?</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Assign nil to x</span></span>
+<span class="swiftcode">x = nil</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Print x (The forcing avoids Xcode warning messages: thanks to whoever suggested this.)</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x <span class="swiftkeyword">as</span> <span class="swiftclass">Int</span>?<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> x == nil {</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span>
+<span class="swiftcode">} <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//and print it</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x!<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Assign a value of 3 to x</span></span>
+<span class="swiftcode">x = <span class="swiftnumber">3</span> </span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Print x</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x <span class="swiftkeyword">as</span> <span class="swiftclass">Int</span>?<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> x != nil {</span>
+<span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//and print it</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x!<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">} <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare vriable z as an optinal Fraction</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> z: <span class="swiftdefined">Fraction</span>?</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Assign a Fraction object 1/3 to z</span></span>
+<span class="swiftcode">z = <span class="swiftdefined">Fraction</span>(num: <span class="swiftnumber">1</span>, den: <span class="swiftnumber">3</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Print z</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"z=</span></span><span class="codeswift">\<span class="swiftstring">(</span>z <span class="swiftkeyword">as</span> Fraction?<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>) </span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Check if z has a value or not</span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> z != nil {</span>
+<span class="swiftcode">    <span class="swiftcomment">//If z has a value, unwrap that value</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//and print it</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"z has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>z!<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">    <span class="swiftcomment">//If the value of an optional is an object,</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//the optional must be unwrapped in order</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//to access the properties and methods of that object</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">//Print the computed decimal property of the</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//unwrapped z</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"The decimal property of z's value is </span></span><span class="codeswift">\<span class="swiftstring">(</span>z!.decimal<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">} <span class="swiftkeyword">else</span> {</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"z has no value"</span>)</span>
+<span class="swiftcode">}</span>
+</pre>
+</div>
+		
+
+		<p>
+		This program is meant to mirror the one from <em>prog3.1</em>.  An <em>optional</em> is defined by following a variable type with a "?".  Whereas <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> didn't care about the type of the value it was wrapping, an <em>optional</em> (once defined) wraps a specific type.  This is quite useful, since there is no need for type casting after unwrapping&mdash;an <em><span class="swiftcode"><span class="swiftclass">Int</span>?</span></em> <em>optional</em> always unwraps an <em><span class="swiftcode"><span class="swiftclass">Int</span></span></em> and a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span>?</span></em> <em>optional</em> always unwraps a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>.  It is also important to keep in mind that <em><span class="swiftcode"><span class="swiftclass">Int</span></span></em> and <em><span class="swiftcode"><span class="swiftclass">Int</span>?</span></em> are different types.  
+		</p>
+		
+		<p>
+		The undefined value for an <em>optional</em> is represented by the <em><span class="swiftcode">nil</span></em> keyword (just like the undefined value for a <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> was represented by the <em><span class="swiftcode">NIL</span></em> object).  The nice thing about the fact that <em>optionals</em> are not really classes is that they can be assigned values using the "=" operator, whereas  <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> had to be instantiated through an initialiser.  Unwrapping is done with the "!" operator following the variable.  And so, <em><span class="swiftcode">x!</span></em> here corresponds to <em><span class="swiftcode">x.unwrap</span></em> in the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em> scenario).  Compare the programs from <em>prog3.1</em> and <em>prog3.2</em> side by side to make sure you understand how <em>optionals</em> compares to <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em>s.
+		</p>
+		
+		<p>
+		The built-in <em>optionals</em> have one more extra feature, which cannot be emulated with the <em><span class="swiftcode"><span class="swiftdefined">SimpleOptional</span></span></em>.  The test for <em><span class="swiftcode">nil</span></em> can be done through unwrapping to a constant.  The syntax for this is as follows:
+		</p>
+		
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/02/main_02.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;"><span class="codeold">01:
+</span><span class="codeold">02:
+</span><span class="codeold">03:
+</span><span class="codeold">04:
+</span><span class="codeold">05:
+</span><span class="codeold">06:
+</span><span class="codeold">07:
+</span><span class="codeold">08:
+</span><span class="codeold">09:
+</span><span class="codeold">10:
+</span><span class="codeold">11:
+</span><span class="codeold">12:
+</span><span class="codeold">13:
+</span><span class="codeold">14:
+</span><span class="codeold">15:
+</span><span class="codeold">16:
+</span><span class="codeold">17:
+</span><span class="codeold">18:
+</span><span class="codeold">19:
+</span><span class="codeold">20:
+</span><span class="codeold">21:
+</span><span class="codeold">22:
+</span><span class="codeold">23:
+</span><span class="codeold">24:
+</span><span class="codeold">25:
+</span><span class="codeold">26:
+</span><span class="codeold">27:
+</span><span class="codeold">28:
+</span>29:
+30:
+31:
+32:
+33:
+<span class="codeold">34:
+</span><span class="codeold">35:
+</span><span class="codeold">36:
+</span><span class="codeold">37:
+</span><span class="codeold">38:
+</span><span class="codeold">39:
+</span><span class="codeold">40:
+</span><span class="codeold">41:
+</span><span class="codeold">42:
+</span><span class="codeold">43:
+</span><span class="codeold">44:
+</span><span class="codeold">45:
+</span><span class="codeold">46:
+</span><span class="codeold">47:
+</span>48:
+49:
+50:
+51:
+52:
+53:
+<span class="codeold">54:
+</span><span class="codeold">55:
+</span><span class="codeold">56:
+</span></pre><pre class="code">
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare variable x as an optional Int</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftclass">Int</span>?</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Assign nil to x</span></span></span>
+<span class="codeold"><span class="swiftcode">x = nil</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Print x</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x <span class="swiftkeyword">as</span> <span class="swiftclass">Int</span>?<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">if</span> x == nil {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">} <span class="swiftkeyword">else</span> {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//If x has a value, unwrap that value</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftcomment">//and print it</span></span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>x!<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">}</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Assign a value of 3 to x</span></span></span>
+<span class="codeold"><span class="swiftcode">x = <span class="swiftnumber">3</span> </span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Print x</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x <span class="swiftkeyword">as</span> <span class="swiftclass">Int</span>?<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Check if x has a value or not</span></span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> <span class="swiftkeyword">let</span> xunwrapped = x {</span>
+<span class="swiftcode">    <span class="swiftcomment">//Checking through a let will automatically</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//unwrap a non-nil optional into a constant,</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//so no need to unwrap</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>xunwrapped<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="codeold"><span class="swiftcode">} <span class="swiftkeyword">else</span> {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"x has no value"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">}</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare vriable z as an optinal Fraction</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> z: <span class="swiftdefined">Fraction</span>?</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Assign a Fraction object 1/3 to z</span></span></span>
+<span class="codeold"><span class="swiftcode">z = <span class="swiftdefined">Fraction</span>(num: <span class="swiftnumber">1</span>, den: <span class="swiftnumber">3</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Print z</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"z=</span></span><span class="codeswift">\<span class="swiftstring">(</span>z <span class="swiftkeyword">as</span> Fraction?<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>) </span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Check if z has a value or not</span></span></span>
+<span class="swiftcode"><span class="swiftkeyword">if</span> <span class="swiftkeyword">let</span> zu = z {</span>
+<span class="swiftcode">    <span class="swiftcomment">//Checking through a let will automatically</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//unwrap a non-nil optional into a constant,</span></span>
+<span class="swiftcode">    <span class="swiftcomment">//so no need to unwrap</span></span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"z has a value of </span></span><span class="codeswift">\<span class="swiftstring">(</span>zu<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"The decimal property of z's value is </span></span><span class="codeswift">\<span class="swiftstring">(</span>zu.decimal<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="codeold"><span class="swiftcode">} <span class="swiftkeyword">else</span> {</span></span>
+<span class="codeold"><span class="swiftcode">    <span class="swiftfunction">print</span>(<span class="swiftstring">"z has no value"</span>)</span></span>
+<span class="codeold"><span class="swiftcode">}</span></span>
+</pre>
+</div>
+		
+
+		<p>
+		These changes to <em>main.swift</em> do not change the program logic.  If <span class="codeline">x</span> is <em><span class="swiftcode">nil</span></em>, the statement "<em><span class="swiftcode"><span class="swiftkeyword">let</span> xunwrapped = x</span></em>" evaluates to false.  If <span class="codeline">x</span> is not <em><span class="swiftcode">nil</span></em>, the value of <span class="codeline">x</span> is unwrapped into <span class="codeline">xunwrapped</span> and the entire statement evaluates to true.  The type of <span class="codeline">xunwrapped</span> is the same type as the value that the <em>optional</em> was wrapping&mdash;in this particular case an <em><span class="swiftcode"><span class="swiftclass">Int</span></span></em>.  The same goes for the statement that checks and automatically unwraps <span class="codeline">z</span> if it's not <em><span class="swiftcode">nil</span></em>, except that <span class="codeline">zu</span> will be a <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em>.
+		</p>
+		
+		<p>
+		It should be pointed that these examples of using <em>optionals</em> are rather basic.  All they demonstrate is the ability to perform a null check.  In fact, <em>optionals</em> were designed to free the programmer from the need to perform compounded null checks through <a href="https://developer.apple.com/library/ios/documentation/Swift/Conceptual/Swift_Programming_Language/OptionalChaining.html">optional chaining</a>.  Also, the use of the unwrap "!" operator is generally considered a bad practice. Well structured program should use <em>optionals</em> in such a way that there is no need for explicit unwrapping&mdash;like in the last two if statements of the <em>main.swift</em> program above.
+		</p>
+
+
+	</div>
+
+	<h2>Complex objects</h3>
+	<div class="block">
+
+		<p>
+		The second part of this lab does not refer to objects that are complicated, but to objects that represent complex numbers.  In this exercise you will implement a class on your own.   It has to conform to a pre-defined interface.  At the end, there will be a bit of practice with reference assignment and object copying.
+		</p>
+
+
+      <h3>Complex numbers</h3>
+
+		<p>
+		Like it or not, math is the language of computing.  For all the high level programming abstractions, such as OOP, the end product of a compiled program is the machine code, which is a series of mathematical operations.  This is why mathematics lends itself so well to example programs, and why in this exercise you'll be implementing a class that can do complex number arithmetic.  Complex numbers are very important for graphics&mdash;computations for rotations in all game engines rely on quaternions, which are an extension of complex numbers.  But for this lab you'll stick to bare essentials.
+		</p>
+		
+		<p>
+		A complex number consists of two separate values: the real and imaginary part.  Given a complex number x, where x<sub>r</sub> is its real part, and x<sub>i</sub> is its imaginary part, and a complex number y, where y<sub>r</sub> is its real part, and y<sub>i</sub> is its imaginary part, the magnitude, addition, subtraction, multiplication and between these numbers is defined as follows:
+		</p>	
+
+	<img class="block" src="images/complexmath.png" style="max-width:320px;" title="Complex number arithmetic">
+
+		<p>
+		If you understand how these formulas were derived, great.  If not, it doesn't matter&mdash;to implement the methods of the <em><span class="swiftcode">Complex</span></em> class all you need to do is follow what the formulas tell you without worrying too much about their mathematical meaning.
+		</p>
+
+	<h3>Complex class</h3>
+	
+		<p>
+		Create a new Command Line Tool project in Xcode and name it <em>prog3.3</em>.  Create a new file, call it <em>Complex.swift</em> and paste-in the following code:
+		</p>
+		
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/03/Complex.swift">Complex.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;">001:
+002:
+003:
+004:
+005:
+006:
+007:
+008:
+009:
+010:
+011:
+012:
+013:
+014:
+015:
+016:
+017:
+018:
+019:
+020:
+021:
+022:
+023:
+024:
+025:
+026:
+027:
+028:
+029:
+030:
+031:
+032:
+033:
+034:
+035:
+036:
+037:
+038:
+039:
+040:
+041:
+042:
+043:
+044:
+045:
+046:
+047:
+048:
+049:
+050:
+051:
+052:
+053:
+054:
+055:
+056:
+057:
+058:
+059:
+060:
+061:
+062:
+063:
+064:
+065:
+066:
+067:
+068:
+069:
+070:
+071:
+072:
+073:
+074:
+075:
+076:
+077:
+078:
+079:
+080:
+081:
+082:
+083:
+084:
+085:
+086:
+087:
+088:
+089:
+090:
+091:
+092:
+093:
+094:
+095:
+096:
+097:
+098:
+099:
+100:
+101:
+102:
+103:
+104:
+105:
+106:
+107:
+108:
+109:
+110:
+111:
+112:
+113:
+114:
+115:
+116:
+117:
+118:
+119:
+120:
+121:
+122:
+123:
+124:
+125:
+126:
+127:
+128:
+129:
+130:
+131:
+132:
+133:
+134:
+135:
+136:
+137:
+138:
+139:
+140:
+141:
+142:
+143:
+144:
+145:
+146:
+147:
+148:
+149:
+150:
+151:
+152:
+153:
+154:
+155:
+156:
+157:
+158:
+159:
+</pre><pre class="code">
+<span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">Represents a complex number</span></span>
+<span class="swiftcode"><span class="swiftcomment"></span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">class</span> Complex : <span class="swiftclass">CustomStringConvertible</span> {</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// STORED PROPERTIES</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftkeyword">var</span> real: <span class="swiftclass">Float</span>;   <span class="swiftcomment">// Real part of the number</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">var</span> imag: <span class="swiftclass">Float</span>;   <span class="swiftcomment">// Imaginary part of the number</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// COMPUTED PROPERTIES</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - returns: Float Magnitude of the complex number</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">var</span> magnitude: <span class="swiftclass">Float</span> {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - returns: String String representation of a complex number</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">var</span> description: <span class="swiftclass">String</span> {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// INITIALISERS</span></span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    Designated initialiser</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    Real and imaginary parts are passed in the arguments of the initialiser.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter real Real part of the numerator</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter imag Imaginary part of the number</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">init</span>(real : <span class="swiftclass">Float</span>, imag : <span class="swiftclass">Float</span>) {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    Default initialiser</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    Sets complex number to 0</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">convenience</span> <span class="swiftkeyword">init</span>() {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">// METHODS</span></span>
+<span class="swiftcode"></span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    Adds two complex numbers.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c1: Complex number to add to</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c2: Complex number to be added</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - returns: The result of c1 + c2.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">static</span> <span class="swiftkeyword">func</span> add(c1: <span class="swiftdefined">Complex</span>, to c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    Subtract a complex number from a complex number.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c1: Complex number to subtract</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c2: Complex number to subtract from</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - returns: The result of c2 - c1.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">static</span> <span class="swiftkeyword">func</span> subtract(c1: <span class="swiftdefined">Complex</span>, from c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    Multiply a complex number by a complex number.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c1: Complex number to multiply</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c2: Complex number to multiply by</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - returns: The result of c1*c2.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">static</span> <span class="swiftkeyword">func</span> multiply(c1: <span class="swiftdefined">Complex</span>, by c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">    </span>
+<span class="swiftcode">    <span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">    Divide a complex number by a complex number.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c1: Complex number to divide</span></span>
+<span class="swiftcode"><span class="swiftcomment">    - parameter c2: Complex number to divide by</span></span>
+<span class="swiftcode"><span class="swiftcomment">    </span></span>
+<span class="swiftcode"><span class="swiftcomment">    - returns: The result of c1/c2.</span></span>
+<span class="swiftcode"><span class="swiftcomment">    */</span></span>
+<span class="swiftcode">    <span class="swiftkeyword">static</span> <span class="swiftkeyword">func</span> divide(c1: <span class="swiftdefined">Complex</span>, by c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">        <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">    }</span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">+ operator between two Complex numbers</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> +(c1: <span class="swiftdefined">Complex</span>, c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">- operator between two Complex numbers</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> -(c1: <span class="swiftdefined">Complex</span>, c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">* operator between two Complex numbers</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> *(c1: <span class="swiftdefined">Complex</span>, c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">/ operator between two Complex numbers</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> /(c1: <span class="swiftdefined">Complex</span>, c2: <span class="swiftdefined">Complex</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">+ operator between a Complex number and a Float</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> +(c: <span class="swiftdefined">Complex</span>, x: <span class="swiftclass">Float</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">- operator between a Complex number and a Float</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> -(c: <span class="swiftdefined">Complex</span>, x: <span class="swiftclass">Float</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">* operator between a Complex number and a Float</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> *(c: <span class="swiftdefined">Complex</span>, x: <span class="swiftclass">Float</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">/**</span></span>
+<span class="swiftcode"><span class="swiftcomment">/ operator between a Complex number and a Float</span></span>
+<span class="swiftcode"><span class="swiftcomment">*/</span></span>
+<span class="swiftcode"><span class="swiftkeyword">func</span> /(c: <span class="swiftdefined">Complex</span>, x: <span class="swiftclass">Float</span>) -&gt; <span class="swiftdefined">Complex</span> {</span>
+<span class="swiftcode">    <span class="swiftcomment">//## IMPLEMENT ##//</span></span>
+<span class="swiftcode">}</span>
+</pre>
+</div>
+		
+
+		<p>
+		The code you're given is an interface for the Complex class.  You have to implement all the internal logic.  Recall, that Swift doesn't separate interface from implementation, and so you'll be filling in the code whenever it says <em><span class="swiftcode"><span class="swiftcomment">//## IMPLEMENT ##// </span></span></em></span> (which is pretty much everywhere).  The <em>magnitude</em> property should return the magnitude of the number&mdash;the formulas above include one for the magnitude.  The string representation of the number (i.e., the <em>description</em> property) should be such that complex number with real value of 3.1 and imaginary value of 0.4 is represented by the string "3.1+0.4i".  Note that the imaginary part if followed by "i" to indicate that it's imaginary.  If imaginary part happens to be negative, that is -0.4, the number would be represented as "3.1-0.4i".  The rest of the methods should be self explanatory.  If you're not sure how to go about this, follow the example of the <em><span class="swiftcode"><span class="swiftdefined">Fraction</span></span></em> class from the previous lab&mdash;the internal logic is a bit different, but overall implementations have many similarities.
+		</p>  
+		
+		<p>
+		Once you're done with the implementation, test it by running the following program from <em>main.swift</em>:
+		</p>
+		
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/03/main_01.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;">01:
+02:
+03:
+04:
+05:
+06:
+07:
+08:
+09:
+10:
+11:
+12:
+13:
+14:
+15:
+16:
+17:
+18:
+19:
+20:
+21:
+22:
+23:
+24:
+25:
+26:
+27:
+28:
+29:
+30:
+31:
+</pre><pre class="code">
+<span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span>
+<span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: <span class="swiftnumber">1</span>.<span class="swiftnumber">2</span>, imag: -<span class="swiftnumber">3</span>.<span class="swiftnumber">6</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span>
+<span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> y: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: -<span class="swiftnumber">0</span>.<span class="swiftnumber">5</span>, imag: <span class="swiftnumber">2</span>.<span class="swiftnumber">3</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex objects</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of complex objects</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"></span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex object to a float</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+3.0=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+<span class="swiftnumber">3</span>.<span class="swiftnumber">0</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of a float from a complex object</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-2.1=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-<span class="swiftnumber">2</span>.<span class="swiftnumber">1</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects by a float</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*7.5=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*<span class="swiftnumber">7</span>.<span class="swiftnumber">5</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects by a float</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/4.2=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/<span class="swiftnumber">4</span>.<span class="swiftnumber">2</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+</pre>
+</div>
+		
+
+		<p>
+		Compile and run.  Do you get the following output?
+		</p>
+
+<pre class="output">
+x=1.2-3.6i
+y=-0.5+2.3i
+x+y=0.7-1.3i
+x-y=1.7-5.9i
+x*y=7.68+4.56i
+x/y=-1.60289-0.173285i
+x+3.0=4.2-3.6i
+x-2.1=-0.9-3.6i
+x*7.5=9.0-27.0i
+x/4.2=0.285714-0.857143i
+</pre>
+
+		<p>
+		If not, keep working on your program&mdash;you've probably messed up somewhere or missed something.  If you're still having trouble, try to come up with other test cases that might help you with debugging.
+		</p>
+
+	  <h3>Reference assignment</h3>
+
+		<p>
+		Implementing the <em><span class="swiftcode"><span class="swiftdefined">Complex</span></span></em> class was just the first part of this exercise.  Next, you're going to examine what happens when an object is assigned to another.  Add the following code to <em>main.swift</em>:
+		</p>
+		
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/03/main_02.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;"><span class="codeold">01:
+</span><span class="codeold">02:
+</span><span class="codeold">03:
+</span><span class="codeold">04:
+</span><span class="codeold">05:
+</span><span class="codeold">06:
+</span><span class="codeold">07:
+</span><span class="codeold">08:
+</span><span class="codeold">09:
+</span><span class="codeold">10:
+</span><span class="codeold">11:
+</span><span class="codeold">12:
+</span><span class="codeold">13:
+</span><span class="codeold">14:
+</span>15:
+16:
+17:
+18:
+19:
+20:
+21:
+<span class="codeold">22:
+</span><span class="codeold">23:
+</span><span class="codeold">24:
+</span><span class="codeold">25:
+</span><span class="codeold">26:
+</span><span class="codeold">27:
+</span><span class="codeold">28:
+</span><span class="codeold">29:
+</span><span class="codeold">30:
+</span><span class="codeold">31:
+</span><span class="codeold">32:
+</span><span class="codeold">33:
+</span><span class="codeold">34:
+</span><span class="codeold">35:
+</span><span class="codeold">36:
+</span><span class="codeold">37:
+</span><span class="codeold">38:
+</span><span class="codeold">39:
+</span></pre><pre class="code">
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: <span class="swiftnumber">1</span>.<span class="swiftnumber">2</span>, imag: -<span class="swiftnumber">3</span>.<span class="swiftnumber">6</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> y: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: -<span class="swiftnumber">0</span>.<span class="swiftnumber">5</span>, imag: <span class="swiftnumber">2</span>.<span class="swiftnumber">3</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="swiftcode"><span class="swiftcomment">//Declare a new Complex reference and set it equal</span></span>
+<span class="swiftcode"><span class="swiftcomment">//to another object's reference</span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> z: <span class="swiftdefined">Complex</span> = x</span>
+<span class="swiftcode"><span class="swiftcomment">//Change the new object's state</span></span>
+<span class="swiftcode">z.imag = <span class="swiftnumber">1</span>.<span class="swiftnumber">0</span> </span>
+<span class="swiftcode"><span class="swiftcomment">//Show the new object's state</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"z=</span></span><span class="codeswift">\<span class="swiftstring">(</span>z<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex object to a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+3.0=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+<span class="swiftnumber">3</span>.<span class="swiftnumber">0</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of a float from a complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-2.1=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-<span class="swiftnumber">2</span>.<span class="swiftnumber">1</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects by a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*7.5=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*<span class="swiftnumber">7</span>.<span class="swiftnumber">5</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects by a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/4.2=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/<span class="swiftnumber">4</span>.<span class="swiftnumber">2</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+</pre>
+</div>
+		
+
+		<p>
+		In this code a new <em><span class="swiftcode"><span class="swiftdefined">Complex</span></span></em> variable, <span class="codeline">z</span>, is declared and is set equal to <span class="codeline">x</span>, which has been instantiated earlier on.  Given that object x has been initialised to represent number "1.2-3.6i" and the fact that the value of the <span class="codeline">z.imag</span> is changed to 1.0, what do you expect the final value of <span class="codeline">z</span> to be?  If you answered "1.2+1.0i", then you're correct.  
+		</p>
+		
+		<div class="note">
+		<img src="images/note.png" style="width:64px;max:64px">
+	
+		<p>
+		The stored properties of the <em><span class="swiftcode"><span class="swiftdefined">Complex</span></span></em> class have not been made private nor constant on purpose, just so you can carry out this test. 
+		</p>
+		</div>
+
+		<p>
+		Run the program to confirm that z is "1.2+1.0i".  Here's the output I got:
+		</p>
+
+<pre class="output">
+x=1.2-3.6i
+y=-0.5+2.3i
+<span class="hilight">z=1.2+1.0i</span>
+x+y=0.7+3.3i
+x-y=1.7-1.3i
+x*y=-2.9+2.26i
+x/y=0.306859-0.588448i
+x+3.0=4.2+1.0i
+x-2.1=-0.9+1.0i
+x*7.5=9.0+7.5i
+x/4.2=0.285714+0.238095i
+</pre>
+
+		<p>
+		Indeed, <span class="codeline">z</span> is what it ought to be.  However, did you notice something else?  Take a look at the result of all the operations on <span class="codeline">x</span> following the creation of <span class="codeline">z</span>&mdash;they're different from before.  Add the following line to <em>main.swift</em> to check the state of <span class="codeline">x</span> after the modification of <span class="codeline">z</span>:
+		</p>
+
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/03/main_03.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;"><span class="codeold">01:
+</span><span class="codeold">02:
+</span><span class="codeold">03:
+</span><span class="codeold">04:
+</span><span class="codeold">05:
+</span><span class="codeold">06:
+</span><span class="codeold">07:
+</span><span class="codeold">08:
+</span><span class="codeold">09:
+</span><span class="codeold">10:
+</span><span class="codeold">11:
+</span><span class="codeold">12:
+</span><span class="codeold">13:
+</span><span class="codeold">14:
+</span><span class="codeold">15:
+</span><span class="codeold">16:
+</span><span class="codeold">17:
+</span><span class="codeold">18:
+</span><span class="codeold">19:
+</span><span class="codeold">20:
+</span><span class="codeold">21:
+</span>22:
+23:
+<span class="codeold">24:
+</span><span class="codeold">25:
+</span><span class="codeold">26:
+</span><span class="codeold">27:
+</span><span class="codeold">28:
+</span><span class="codeold">29:
+</span><span class="codeold">30:
+</span><span class="codeold">31:
+</span><span class="codeold">32:
+</span><span class="codeold">33:
+</span><span class="codeold">34:
+</span><span class="codeold">35:
+</span><span class="codeold">36:
+</span><span class="codeold">37:
+</span><span class="codeold">38:
+</span><span class="codeold">39:
+</span><span class="codeold">40:
+</span><span class="codeold">41:
+</span></pre><pre class="code">
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: <span class="swiftnumber">1</span>.<span class="swiftnumber">2</span>, imag: -<span class="swiftnumber">3</span>.<span class="swiftnumber">6</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> y: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: -<span class="swiftnumber">0</span>.<span class="swiftnumber">5</span>, imag: <span class="swiftnumber">2</span>.<span class="swiftnumber">3</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new Complex reference and set it equal</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//to another object's reference</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> z: <span class="swiftdefined">Complex</span> = x</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Change the new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode">z.imag = <span class="swiftnumber">1</span>.<span class="swiftnumber">0</span> </span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"z=</span></span><span class="codeswift">\<span class="swiftstring">(</span>z<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="swiftcode"><span class="swiftcomment">//Show the original object's state</span></span>
+<span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex object to a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+3.0=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+<span class="swiftnumber">3</span>.<span class="swiftnumber">0</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of a float from a complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-2.1=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-<span class="swiftnumber">2</span>.<span class="swiftnumber">1</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects by a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*7.5=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*<span class="swiftnumber">7</span>.<span class="swiftnumber">5</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects by a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/4.2=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/<span class="swiftnumber">4</span>.<span class="swiftnumber">2</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+</pre>
+</div>
+		
+		<p>
+		Run the program and you should see the following output:
+		</p>
+
+<pre class="output">
+x=1.2-3.6i
+y=-0.5+2.3i
+z=1.2+1.0i
+<span class="hilight">x=1.2+1.0i</span>
+x+y=0.7+3.3i
+x-y=1.7-1.3i
+x*y=-2.9+2.26i
+x/y=0.306859-0.588448i
+x+3.0=4.2+1.0i
+x-2.1=-0.9+1.0i
+x*7.5=9.0+7.5i
+x/4.2=0.285714+0.238095i
+</pre>
+
+		<p>
+		The state of <span class="codeline">x</span> has changed along with the state of <span class="codeline">z</span>.  Do you know why?  Recall that in Swift objects are reference types (as opposed to value types).  This means, that variables of a class type are references to objects of that class.  In the above program, <span class="codeline">x</span>, <span class="codeline">y</span> and <span class="codeline">z</span> are references to <em><span class="swiftcode"><span class="swiftdefined">Complex</span></span></em> objects.  Whereas <span class="codeline">x</span> and <span class="codeline">y</span> refer to different instances of <em><span class="swiftcode"><span class="swiftdefined">Complex</span></span></em> objects, assignment <span class="codeline">z=x</span> sets the references equal&mdash;<span class="codeline">z</span> references the same object that <span class="codeline">x</span> does.  Changing the object state through one reference affects what is seen by both <span class="codeline">x</span> and <span class="codeline">z</span>.  One way to verify this is to use Xcode debugger. Create a breakpoint right on the line <em><span class="swiftcode">z.imag = <span class="swiftnumber">1</span>.<span class="swiftnumber">0</span> </span></em> by double clicking at the line number.  Run the program&mdash;it should stop right on the breakpoint, just before z is changed.  If the values of the variables are not shown in the Debug window, make sure to select "All variables, Registers, Globals and Statistics" in its bottom-left corner&mdash;the screenshot below shows where to find the setting.
+		</p>
+
+	<img class="block" src="images/screen01.png" style="max-width:1385px;max-height:823px" title="Xcode launcher screen">
+
+		<p>
+		Once you can see the variables, scroll down to find <span class="codeline">x</span>, <span class="codeline">y</span> and <span class="codeline">z</span>.  The number beside each of them show the memory address of the object they reference.  You can examine the state of the referenced object by clicking the expand arrow next to reference.  The value for the address of <span class="codeline">x</span> and <span class="codeline">z</span> in your debugger will be different to the one shown in these screenshot, but it will still be the same address between the two references.  That means, they point to the same object.  Next, click the step over button, to step over the statement that changes the value of <span class="codeline">z.imag</span>.  
+		</p>
+
+	<img class="block" src="images/screen02.png" style="max-width:1385px;max-height:823px" title="Xcode launcher screen">
+
+		<p>
+		The program will execute just one line, <em><span class="swiftcode">z.imag = <span class="swiftnumber">1</span>.<span class="swiftnumber">0</span> </span></em>, and stop showing you the program state just after that change.  Notice that the imag value for both <em><span class="swiftcode">x</span></em> and <em><span class="swiftcode">z</span></em> has changed&mdash;of course it must since references point to the same object.  From that point on, whenever computation on <em><span class="swiftcode">x</span></em> is preformed, its modified state is used.  Finish running the program by pressing the continue button.
+		</p> 
+
+	  <h3>Object copy</h3>
+
+		<p>
+		Having multiple references to an object is quite useful&mdash;for passing object references as parameters to functions, for instance.  But there will be also situations when you will want two distinct instances of the same object, so that one can be modified without affecting the other.  By convention, creation of a new object with copied state of another is done with a copy method.  This method returns a new instance of the class with its state being the copy of the object on which the method was invoked.  The signature of this method for the <em><span class="swiftcode"><span class="swiftdefined">Complex</span></span></em> class will be "<em><span class="swiftcode"><span class="swiftkeyword">func</span> copy() -&gt; <span class="swiftdefined">Complex</span></span></em>".  Go ahead and implement that method in <em>Complex.swift</em> so it does what it's supposed to.
+		</p>
+		
+		<p>
+		Next, modify <em>main.swift</em> so that z is assigned to a copy of x like so:  
+		</p>
+
+		<div class="codeblock">
+<div class="codeblocktitle"><a href="code/03/main_04.swift">main.swift</a></div>
+<pre class="linenumbers unselectable" style="float: left;"><span class="codeold">01:
+</span><span class="codeold">02:
+</span><span class="codeold">03:
+</span><span class="codeold">04:
+</span><span class="codeold">05:
+</span><span class="codeold">06:
+</span><span class="codeold">07:
+</span><span class="codeold">08:
+</span><span class="codeold">09:
+</span><span class="codeold">10:
+</span><span class="codeold">11:
+</span><span class="codeold">12:
+</span><span class="codeold">13:
+</span><span class="codeold">14:
+</span><span class="codeold">15:
+</span><span class="codeold">16:
+</span>17:
+<span class="codeold">18:
+</span><span class="codeold">19:
+</span><span class="codeold">20:
+</span><span class="codeold">21:
+</span><span class="codeold">22:
+</span><span class="codeold">23:
+</span><span class="codeold">24:
+</span><span class="codeold">25:
+</span><span class="codeold">26:
+</span><span class="codeold">27:
+</span><span class="codeold">28:
+</span><span class="codeold">29:
+</span><span class="codeold">30:
+</span><span class="codeold">31:
+</span><span class="codeold">32:
+</span><span class="codeold">33:
+</span><span class="codeold">34:
+</span><span class="codeold">35:
+</span><span class="codeold">36:
+</span><span class="codeold">37:
+</span><span class="codeold">38:
+</span><span class="codeold">39:
+</span><span class="codeold">40:
+</span><span class="codeold">41:
+</span></pre><pre class="code">
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">import</span> Foundation</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> x: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: <span class="swiftnumber">1</span>.<span class="swiftnumber">2</span>, imag: -<span class="swiftnumber">3</span>.<span class="swiftnumber">6</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new reference to a Complex object and</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//instantiate a new Complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftkeyword">var</span> y: <span class="swiftdefined">Complex</span> = <span class="swiftdefined">Complex</span>(real: -<span class="swiftnumber">0</span>.<span class="swiftnumber">5</span>, imag: <span class="swiftnumber">2</span>.<span class="swiftnumber">3</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Declare a new Complex reference and set it equal</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//to return value of another object's copy method</span></span></span>
+<span class="swiftcode"><span class="swiftkeyword">var</span> z: <span class="swiftdefined">Complex</span> = x.copy()</span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Change the new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode">z.imag = <span class="swiftnumber">1</span>.<span class="swiftnumber">0</span> </span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the new object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"z=</span></span><span class="codeswift">\<span class="swiftstring">(</span>z<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the original object's state</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/y=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/y<span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of addition of complex object to a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x+3.0=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x+<span class="swiftnumber">3</span>.<span class="swiftnumber">0</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of subtraction of a float from a complex object</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x-2.1=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x-<span class="swiftnumber">2</span>.<span class="swiftnumber">1</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of multiplication of complex objects by a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x*7.5=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x*<span class="swiftnumber">7</span>.<span class="swiftnumber">5</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftcomment">//Show the result of dividion of complex objects by a float</span></span></span>
+<span class="codeold"><span class="swiftcode"><span class="swiftfunction">print</span>(<span class="swiftstring">"x/4.2=</span></span><span class="codeswift">\<span class="swiftstring">(</span>x/<span class="swiftnumber">4</span>.<span class="swiftnumber">2</span><span class="swiftstring">)</span></span><span class="swiftcode"><span class="swiftstring">"</span>)</span></span>
+</pre>
+</div>
+		
+
+		<p>
+		Hopefully you still have the breakpoint set.   Run the program again.  This time, when execution stops just before <em><span class="swiftcode">z.imag</span></em> is changed, you'll notice in the variable watch window that <em><span class="swiftcode">x</span></em> and <em><span class="swiftcode">z</span></em> reference different addresses.  That means, they refer to different objects, though the contents of both objects are the same.
+		</p>
+
+	<img class="block" src="images/screen03.png" style="max-width:1385px;max-height:823px" title="Xcode launcher screen">
+
+		<p>
+	   If you step over the next line, you'll notice that this time <em><span class="swiftcode">z.imag</span></em> has changed, but <em><span class="swiftcode">x.imag</span></em> didn't.
+		</p> 
+
+	<img class="block" src="images/screen04.png" style="max-width:1385px;max-height:823px" title="Xcode launcher screen">
+
+		<p>
+		Press the continue button, and you should get the results for computations with the original value of <em><span class="swiftcode">x</span></em>		</p>
+		
+<pre class="output">
+x=1.2-3.6i
+y=-0.5+2.3i
+z=1.2+1.0i
+x=1.2-3.6i
+x+y=0.7-1.3i
+x-y=1.7-5.9i
+x*y=7.68+4.56i
+x/y=-1.60289-0.173285i
+x+3.0=4.2-3.6i
+x-2.1=-0.9-3.6i
+x*7.5=9.0-27.0i
+x/4.2=0.285714-0.857143i
+</pre>
+
+	
+	</div>	
+
+	<div class="banner">
+		<a href="http://cs.otago.ac.nz/cosc346/labs.php">COSC346&mdash;Object Oriented Programming and User Interfaces</a>
+	</div>
+	</body>
+</html>
