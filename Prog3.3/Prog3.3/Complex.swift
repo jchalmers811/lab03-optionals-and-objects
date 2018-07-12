@@ -50,8 +50,8 @@ class Complex : CustomStringConvertible {
      
      Real and imaginary parts are passed in the arguments of the initialiser.
      
-     - parameter real Real part of the numerator
-     - parameter imag Imaginary part of the number
+     - parameter real: Real part of the numerator
+     - parameter imag: Imaginary part of the number
      */
     init(real : Float, imag : Float) {
         self.real = real
@@ -68,6 +68,17 @@ class Complex : CustomStringConvertible {
     }
     
     // METHODS
+    
+    /**
+     Make a copy of a complex number
+     
+     - returns: A new complex number that is a copy of this complex number
+     */
+    func copy() -> Complex {
+        
+        return Complex(real: self.real, imag: self.imag)
+    }
+    
     
     /**
      Adds two complex numbers.

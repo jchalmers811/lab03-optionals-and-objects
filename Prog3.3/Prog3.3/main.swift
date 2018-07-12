@@ -22,11 +22,13 @@ print("y=\(y)")
 
 //Declare a new Complex reference and set it equal
 //to another object's reference
-var z: Complex = x
+var z: Complex = x.copy()
 //Change the new object's state
 z.imag = 1.0
 //Show the new object's state
 print("z=\(z)")
+//Show the original object's state
+print("x=\(x)")
 
 //Show the result of addition of complex objects
 print("x+y=\(x+y)")
